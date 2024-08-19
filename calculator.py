@@ -1,36 +1,42 @@
 from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import Literal
+import os
 
 app = FastAPI()
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
-)
+class Calculation(BaseModel):
+    operation: Literal["add", "subtract", "multiply", "divide"]
+    x: float
+    y: float
 
-class CalculationRequest(BaseModel):
-    a: float
-    b: float
+@app.post("/calculate")
+async def calculate(calc: Calculation):
+    try:
+        if calc.operation == "add":
+            result = calc.x + calc.y
+        elif calc.operation == "subtract":
+            result = calc.x - calc.y
+        elif calc.operation == "multiply":
+            result = calc.x * calc.y
+        elif calc.operation == "divide":
+            if calc.y == 0:
+                raise ZeroDivisionError("Division by zero is not allowed")
+            result = calc.x / calc.y
+        else:
+            raise ValueError("Invalid operation")
+        
+        return {"result": result}
+    except ZeroDivisionError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-@app.post("/add")
-def add(request: CalculationRequest):
-    return {"result": request.a + request.b}
+@app.get("/")
+async def root():
+    return {"message": "Welcome to the Calculator API"}
 
-@app.post("/subtract")
-def subtract(request: CalculationRequest):
-    return {"result": request.a - request.b}
-
-@app.post("/multiply")
-def multiply(request: CalculationRequest):
-    return {"result": request.a * request.b}
-
-@app.post("/divide")
-def divide(request: CalculationRequest):
-    if request.b == 0:
-        raise HTTPException(status_code=400, detail="Cannot divide by zero")
-    return {"result": request.a / request.b}
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run("calculator:app", host="0.0.0.0", port=port, reload=False)
