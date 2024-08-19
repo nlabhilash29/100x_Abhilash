@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Literal
 import os
@@ -35,6 +36,13 @@ async def calculate(calc: Calculation):
 @app.get("/")
 async def root():
     return {"message": "Welcome to the Calculator API"}
+
+@app.exception_handler(404)
+async def custom_404_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=404,
+        content={"detail": "The requested resource was not found on this server."}
+    )
 
 if __name__ == "__main__":
     import uvicorn
