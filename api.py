@@ -14,4 +14,4 @@ def add_numbers_api(numbers: Numbers):
     return {"result": add_numbers(numbers.x, numbers.y)}
 
 def add_numbers(x, y):
-    return x + y
+    return x + y# New feature implementation
